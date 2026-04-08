@@ -23,27 +23,15 @@ jobs:
         id: get-arn
         run: |
           SERVICE_ARN=$(aws apprunner list-services \
-            --region ${{ env.AWS_REGION }} \                                                                                                 
-            --query "ServiceSummaryList[?ServiceName=='${{ env.APP_RUNNER_SERVICE_NAME }}'].ServiceArn" \                                  
-            --output text)                  
-          echo "service_arn=$SERVICE_ARN" >> $GITHUB_OUTPUT                                                                                  
+            --region ${{ env.AWS_REGION }} \
+            --query "ServiceSummaryList[?ServiceName=='${{ env.APP_RUNNER_SERVICE_NAME }}'].ServiceArn" \
+            --output text)
+          echo "service_arn=$SERVICE_ARN" >> $GITHUB_OUTPUT
           echo "Deleting App Runner service: $SERVICE_ARN"
 
       - name: Delete App Runner Service
         run: |
-          aws apprunner delete-service \                                                                                                     
+          aws apprunner delete-service \
             --service-arn ${{ steps.get-arn.outputs.service_arn }} \
-            --region ${{ env.AWS_REGION }}                                                                                                   
+            --region ${{ env.AWS_REGION }}
           echo "App Runner service deleted"
-
-  delete-neon-database:
-    runs-on: ubuntu-latest
-    needs: delete-app-runner
-
-    steps:
-      - name: Delete Neon Project
-        run: |
-          curl -s -X DELETE \
-            "https://console.neon.tech/api/v2/projects/${{ vars.NEON_PROJECT_ID }}" \                                                        
-            -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}"                                                                         
-          echo "Neon project deleted"
