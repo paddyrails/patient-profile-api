@@ -5,7 +5,7 @@ from api import router
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="patient profile api",
+    title="Patient Profile Api",
     version="1.0.0",
     description="API for managing patient profiles"
 )
