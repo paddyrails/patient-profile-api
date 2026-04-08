@@ -1,0 +1,1 @@
+from common.models.patient_profile import PatientProfile
