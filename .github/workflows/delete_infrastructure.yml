@@ -1,0 +1,49 @@
+name: Delete Infrastructure
+
+on:
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  APP_RUNNER_SERVICE_NAME: patient-profile-api
+
+jobs:
+  delete-app-runner:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get App Runner Service ARN
+        id: get-arn
+        run: |
+          SERVICE_ARN=$(aws apprunner list-services \
+            --region ${{ env.AWS_REGION }} \                                                                                                 
+            --query "ServiceSummaryList[?ServiceName=='${{ env.APP_RUNNER_SERVICE_NAME }}'].ServiceArn" \                                  
+            --output text)                  
+          echo "service_arn=$SERVICE_ARN" >> $GITHUB_OUTPUT                                                                                  
+          echo "Deleting App Runner service: $SERVICE_ARN"
+
+      - name: Delete App Runner Service
+        run: |
+          aws apprunner delete-service \                                                                                                     
+            --service-arn ${{ steps.get-arn.outputs.service_arn }} \
+            --region ${{ env.AWS_REGION }}                                                                                                   
+          echo "App Runner service deleted"
+
+  delete-neon-database:
+    runs-on: ubuntu-latest
+    needs: delete-app-runner
+
+    steps:
+      - name: Delete Neon Project
+        run: |
+          curl -s -X DELETE \
+            "https://console.neon.tech/api/v2/projects/${{ vars.NEON_PROJECT_ID }}" \                                                        
+            -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}"                                                                         
+          echo "Neon project deleted"
